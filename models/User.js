@@ -22,23 +22,47 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: [true, "Please provide password"],
     // minlength: 6,
-    // maxlength: 50,
+    // maxlength: 50,Yes, there are a lot of
     select: false,
   },
 });
 
-UserSchema.pre("save", async function () {
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
+UserSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) {
+    return next();
+  }
+
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
-UserSchema.methods.isValidPassword = async function (password) {
-  return await bcrypt.compare(password, this.password);
-};
 UserSchema.methods.createJWT = function () {
   return jwt.sign({ userId: this._id }, process.env.ACCESS_TOKEN_SECRET, {
     expiresIn: "30d",
   });
+};
+
+UserSchema.methods.comparePassword = async function (candidatePassword) {
+  try {
+    if (!this.password) {
+      // Handle the case where the password is not defined
+      console.error("Password is undefined for this user");
+      return false;
+    }
+
+    console.log("this.password", this.password);
+    const isMatch = await bcrypt.compare(candidatePassword, this.password);
+    return isMatch;
+  } catch (error) {
+    // Handle the error, e.g., log it or throw it further.
+    console.error("Error comparing passwords:", error);
+    return false; // You might want to return false in case of an error.
+  }
 };
 
 module.exports = mongoose.model("User", UserSchema);
