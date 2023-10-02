@@ -51,11 +51,9 @@ UserSchema.methods.comparePassword = async function (candidatePassword) {
   try {
     if (!this.password) {
       // Handle the case where the password is not defined
-      console.error("Password is undefined for this user");
       return false;
     }
 
-    console.log("this.password", this.password);
     const isMatch = await bcrypt.compare(candidatePassword, this.password);
     return isMatch;
   } catch (error) {
