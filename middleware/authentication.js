@@ -12,8 +12,9 @@ const auth = async (req, res, next) => {
 
   try {
     const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-    const user = await User.findOne({ _id: payload.userId });
-    console.log("user", user);
+    const user = await User.findOne({ _id: payload.userId }).select(
+      "-password"
+    );
     req.user = { userId: user._id, name: user.name, email: user.email };
     next();
   } catch (error) {
